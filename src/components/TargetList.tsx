@@ -1,100 +1,66 @@
-import React, { useEffect, useState } from 'react';
-import api from '../services/api';
-import EditTargetForm from './EditTargetForm';
-import EditTodoForm from './EditTodoForm';
+import React, { useState } from "react";
+import { Target } from "../types/target";
+import { IoEyeSharp } from "react-icons/io5";
+import {
+  FaArrowAltCircleDown,
+  FaArrowAltCircleUp,
+  FaRegTrashAlt,
+} from "react-icons/fa";
 
-interface Target {
-  id: number;
-  name: string;
+interface TargetListProps {
+  targets: Target[];
+  onSelectTarget: (target: Target) => void;
+  onDeleteTarget: (id: number) => void;
 }
 
-interface Todo {
-  id: number;
-  title: string;
-  completed: boolean;
-}
-
-const TargetList: React.FC<{ targetsUpdated: boolean }> = ({ targetsUpdated }) => {
-  const [targets, setTargets] = useState<Target[]>([]);
-  const [todos, setTodos] = useState<Todo[]>([]);
-  const [selectedTarget, setSelectedTarget] = useState<number | null>(null);
-  
-  const [editingTargetId, setEditingTargetId] = useState<number | null>(null);
-  const [editingTodoId, setEditingTodoId] = useState<number | null>(null);
-
-  useEffect(() => {
-    fetchTargets();
-  }, [targetsUpdated]);
-
-  const fetchTargets = async () => {
-    try {
-      const response = await api.get('/targets');
-      setTargets(response.data);
-    } catch (error) {
-      console.error('Erro ao buscar targets:', error);
-    }
-  };
-
-  const fetchTodos = async (targetId: number) => {
-    try {
-      const response = await api.get(`/todos?targetId=${targetId}`);
-      setTodos(response.data);
-    } catch (error) {
-      console.error('Erro ao buscar TODOs:', error);
-    }
-  };
-
-  const handleTargetClick = (targetId: number) => {
-    setSelectedTarget(targetId);
-    fetchTodos(targetId);
-  };
+const TargetList: React.FC<TargetListProps> = ({
+  targets,
+  onSelectTarget,
+  onDeleteTarget,
+}) => {
+  const [showTargets, setShowTargets] = useState(false);
 
   return (
-    <div>
-      <h2>Lista de Targets</h2>
-      <ul>
-        {targets.map(target => (
-          <li key={target.id}>
-            <span onClick={() => handleTargetClick(target.id)}>{target.name}</span> {}
-            <button onClick={() => setEditingTargetId(target.id)}>Editar</button>
-          </li>
-        ))}
-      </ul>
-
-      {editingTargetId && (
-        <EditTargetForm 
-          targetId={editingTargetId} 
-          onTargetUpdated={() => {
-            setEditingTargetId(null);
-            fetchTargets();
-          }} 
-        />
-      )}
-
-      {selectedTarget && (
-        <div>
-          <h3>TODOs para o Target selecionado</h3>
+    <section className="target-list">
+      <div className="target-list-title">
+        <h2>Targets</h2>
+        <button onClick={() => setShowTargets(!showTargets)}>
+          {showTargets ? (
+            <FaArrowAltCircleUp size={30} color="#000" />
+          ) : (
+            <FaArrowAltCircleDown size={30} color="#000" />
+          )}
+        </button>
+      </div>
+      {showTargets &&
+        (targets.length > 0 ? (
           <ul>
-            {todos.map(todo => (
-              <li key={todo.id}>
-                {todo.title} - {todo.completed ? 'Concluído' : 'Pendente'}
-                <button onClick={() => setEditingTodoId(todo.id)}>Editar</button>
+            {targets.map((target) => (
+              <li
+                key={target.id}
+                className={`${
+                  target.isComplete && "targetDone"
+                } target-not-done`}
+              >
+                <div className="target-title">{target.title}</div>
+                <div className="target-actions">
+                  <button
+                    onClick={() => onSelectTarget(target)}
+                    className="show-todos"
+                  >
+                    <IoEyeSharp size={20} />
+                  </button>
+                  <button onClick={() => onDeleteTarget(target.id)}>
+                    <FaRegTrashAlt size={18} />
+                  </button>
+                </div>
               </li>
             ))}
           </ul>
-        </div>
-      )}
-
-      {editingTodoId && (
-        <EditTodoForm 
-          todoId={editingTodoId} 
-          onTodoUpdated={() => {
-            setEditingTodoId(null);
-            fetchTodos(selectedTarget!);
-          }} 
-        />
-      )}
-    </div>
+        ) : (
+          <p>Não há targets no momento...</p>
+        ))}
+    </section>
   );
 };
 

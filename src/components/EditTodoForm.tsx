@@ -1,61 +1,72 @@
-import React, { useEffect, useState } from 'react';
-import api from '../services/api';
+import React, { useEffect, useState } from "react";
+import { ToDo } from "../types/todo";
+import { IoCloseCircleSharp } from "react-icons/io5";
 
-interface EditTodoFormProps {
-  todoId: number;
-  onTodoUpdated: () => void;
+interface EditToDoFormProps {
+  todo: ToDo;
+  onSubmit: (todo: ToDo) => void;
+  onCloseEditTodo: () => void;
 }
 
-const EditTodoForm: React.FC<EditTodoFormProps> = ({ todoId, onTodoUpdated }) => {
-  const [title, setTitle] = useState('');
-  const [completed, setCompleted] = useState(false);
-
-  useEffect(() => {
-    const fetchTodo = async () => {
-      try {
-        const response = await api.get(`/todos/${todoId}`);
-        setTitle(response.data.title);
-        setCompleted(response.data.completed);
-      } catch (error) {
-        console.error('Erro ao buscar TODO:', error);
-      }
-    };
-
-    fetchTodo();
-  }, [todoId]);
+const EditToDoForm: React.FC<EditToDoFormProps> = ({
+  todo,
+  onSubmit,
+  onCloseEditTodo,
+}) => {
+  const [title, setTitle] = useState(todo.title || "");
+  const [description, setDescription] = useState(todo.description || "");
+  const [isComplete, setIsComplete] = useState(todo.isComplete || false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
-    api.put(`/todos/${todoId}`, { title, completed })
-      .then(response => {
-        console.log('TODO atualizado:', response.data);
-        onTodoUpdated();
-      })
-      .catch(error => {
-        console.error('Erro ao atualizar TODO:', error);
-      });
+    onSubmit({
+      ...todo,
+      title: title,
+      description: description,
+      isComplete: isComplete,
+    });
   };
 
+  useEffect(() => {
+    setTitle(todo.title);
+    setDescription(todo.description);
+    setIsComplete(todo.isComplete);
+  }, [todo]);
+
   return (
-    <form onSubmit={handleSubmit}>
-      <input 
-        type="text" 
-        value={title} 
-        onChange={(e) => setTitle(e.target.value)} 
-        placeholder="Título do TODO"
-      />
-      <label>
-        <input 
-          type="checkbox" 
-          checked={completed} 
-          onChange={(e) => setCompleted(e.target.checked)} 
+    <div className="edit-form">
+      <div className="edit-form-header">
+        <h3>Edit ToDo</h3>
+        <button onClick={onCloseEditTodo} className="close-edit-form">
+          <IoCloseCircleSharp size={28} color="#000" />
+        </button>
+      </div>
+      <form onSubmit={handleSubmit}>
+        <input
+          type="text"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="Título"
+          required
+          minLength={3}
         />
-        Concluído
-      </label>
-      <button type="submit">Atualizar TODO</button>
-    </form>
+        <textarea
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="Descrição"
+        />
+        <div className="edit-checkbox">
+          <input
+            type="checkbox"
+            checked={isComplete}
+            onChange={(e) => setIsComplete(e.target.checked)}
+          />
+          <label>Completo</label>
+        </div>
+        <button type="submit">Atualizar ToDo</button>
+      </form>
+    </div>
   );
 };
 
-export default EditTodoForm;
+export default EditToDoForm;

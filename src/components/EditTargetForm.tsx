@@ -1,50 +1,72 @@
-import React, { useEffect, useState } from 'react';
-import api from '../services/api';
+import React, { useEffect, useState } from "react";
+import { Target } from "../types/target";
+import { IoCloseCircleSharp } from "react-icons/io5";
 
 interface EditTargetFormProps {
-  targetId: number;
-  onTargetUpdated: () => void;
+  target: Omit<Target, "todo">;
+  onSubmit: (id: number, data: Omit<Target, "id" | "todo">) => void;
+  onClose: () => void;
 }
 
-const EditTargetForm: React.FC<EditTargetFormProps> = ({ targetId, onTargetUpdated }) => {
-  const [name, setName] = useState('');
+const EditTargetForm: React.FC<EditTargetFormProps> = ({
+  target,
+  onSubmit,
+  onClose,
+}) => {
+  const [title, setTitle] = useState(target.title);
+  const [description, setDescription] = useState(target.description);
+  const [isComplete, setIsComplete] = useState(target.isComplete);
 
   useEffect(() => {
-    const fetchTarget = async () => {
-      try {
-        const response = await api.get(`/targets/${targetId}`);
-        setName(response.data.name);
-      } catch (error) {
-        console.error('Erro ao buscar target:', error);
-      }
-    };
-
-    fetchTarget();
-  }, [targetId]);
+    setTitle(target.title);
+    setDescription(target.description);
+    setIsComplete(target.isComplete);
+  }, [target]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
-    api.put(`/targets/${targetId}`, { name })
-      .then(response => {
-        console.log('Target atualizado:', response.data);
-        onTargetUpdated();
-      })
-      .catch(error => {
-        console.error('Erro ao atualizar target:', error);
-      });
+    onSubmit(target.id, {
+      title: title,
+      description: description,
+      isComplete: isComplete,
+    });
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <input 
-        type="text" 
-        value={name} 
-        onChange={(e) => setName(e.target.value)} 
-        placeholder="Nome do Target"
-      />
-      <button type="submit">Atualizar Target</button>
-    </form>
+    <div className="edit-form">
+      <div className="edit-form-header">
+        <h3>Edit Target</h3>
+        <button onClick={onClose} className="close-edit-form">
+          <IoCloseCircleSharp size={28} color="#000"/>
+        </button>
+      </div>
+      <form onSubmit={handleSubmit}>
+        <input
+          type="text"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="Título"
+          required
+          minLength={3}
+        />
+        <textarea
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="Descrição"
+          required
+          minLength={3}
+        />
+        <div className="edit-checkbox">
+          <input
+            type="checkbox"
+            checked={isComplete}
+            onChange={(e) => setIsComplete(e.target.checked)}
+          />
+          <label>Completo</label>
+        </div>
+        <button type="submit">Atualizar Target</button>
+      </form>
+    </div>
   );
 };
 
